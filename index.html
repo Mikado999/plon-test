@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plon Bit — Know What's Trending</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+--bg: #080a0f;
+--bg2: #0d1017;
+--surface: rgba(255,255,255,0.035);
+--border: rgba(255,255,255,0.07);
+--amber: #c8853a;
+--amber-glow:#e09a4a;
+--teal: #1fcfb0;
+--text: #e8e8ec;
+--muted: rgba(232,232,236,0.45);
+--rank: rgba(200,133,58,0.15);
+}
+
+html { scroll-behavior: smooth; }
+body {
+background: var(--bg);
+color: var(--text);
+font-family: 'Syne', sans-serif;
+min-height: 100vh;
+overflow-x: hidden;
+}
+
+/* ── BG CANVAS ── */
+#hex-canvas {
+position: fixed; inset: 0;
+pointer-events: none; z-index: 0; opacity: 0.55;
+}
+.glow-blob {
+position: fixed; border-radius: 50%;
+filter: blur(130px); pointer-events: none; z-index: 0;
+}
+.glow-blob.amber {
+width: 640px; height: 640px;
+background: radial-gradient(circle, rgba(200,133,58,0.16) 0%, transparent 70%);
+top: -120px; right: -100px;
+animation: blobF 8s ease-in-out infinite alternate;
+}
+.glow-blob.teal {
+width: 420px; height: 420px;
+background: radial-gradient(circle, rgba(31,207,176,0.11) 0%, transparent 70%);
+bottom: 20%; left: -80px;
+animation: blobF 11s ease-in-out infinite alternate-reverse;
+}
+@keyframes blobF {
+from { transform: translateY(0) scale(1); }
+to { transform: translateY(40px) scale(1.08); }
+}
+
+.page { position: relative; z-index: 1; }
+
+/* ── NAV ── */
+nav {
+display: flex; align-items: center; justify-content: space-between;
+padding: 20px 52px;
+border-bottom: 1px solid var(--border);
+backdrop-filter: blur(16px);
+background: rgba(8,10,15,0.65);
+position: sticky; top: 0; z-index: 100;
+}
+.logo {
+display: flex; align-items: center; gap: 10px;
+font-size: 1.12rem; font-weight: 800; letter-spacing: 0.14em;
+text-transform: uppercase;
+}
+.logo canvas { width: 34px; height: 34px; }
+.logo .accent { color: var(--amber); }
+.nav-right { display: flex; align-items: center; gap: 18px; }
+.nav-badge {
+display: flex; align-items: center; gap: 7px;
+font-family: 'DM Mono', monospace; font-size: 0.7rem;
+color: var(--teal); border: 1px solid rgba(31,207,176,0.3);
+border-radius: 20px; padding: 5px 14px; letter-spacing: 0.08em;
+text-transform: uppercase;
+}
+.pulse-dot {
+width: 7px; height: 7px; border-radius: 50%;
+background: var(--teal); box-shadow: 0 0 8px var(--teal);
+animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse {
+0%,100% { opacity: 1; transform: scale(1); }
+50% { opacity: 0.4; transform: scale(0.65); }
+}
+.retry-btn {
+font-family: 'DM Mono', monospace; font-size: 0.68rem;
+letter-spacing: 0.08em; text-transform: uppercase;
+background: transparent; color: var(--muted);
+border: 1px solid var(--border); border-radius: 20px;
+padding: 5px 14px; cursor: pointer;
+transition: color .2s, border-color .2s;
+display: none;
+}
+.retry-btn:hover { color: var(--amber); border-color: rgba(200,133,58,.4); }
+.retry-btn.visible { display: block; }
+
+/* ── HERO ── */
+.hero {
+padding: 85px 52px 55px;
+display: grid; grid-template-columns: 1fr 1fr;
+gap: 60px; align-items: center;
+max-width: 1320px; margin: 0 auto;
+}
+.hero-eyebrow {
+font-family: 'DM Mono', monospace; font-size: 0.68rem;
+letter-spacing: 0.22em; text-transform: uppercase; color: var(--amber);
+margin-bottom: 22px; display: flex; align-items: center; gap: 10px;
+}
+.hero-eyebrow::after {
+content:''; flex: 1; max-width: 55px; height: 1px;
+background: linear-gradient(90deg, var(--amber), transparent);
+}
+.hero h1 {
+font-size: clamp(2.2rem, 4vw, 3.5rem); font-weight: 800;
+line-height: 1.07; letter-spacing: -0.025em; margin-bottom: 22px;
+}
+.hero h1 em {
+font-style: normal;
+background: linear-gradient(135deg, var(--amber-glow), #f0c070, var(--amber));
+-webkit-background-clip: text; -webkit-text-fill-color: transparent;
+background-clip: text;
+}
+.hero-sub {
+font-family: 'DM Mono', monospace; font-size: 0.9rem;
+line-height: 1.75; color: var(--muted); max-width: 500px;
+margin-bottom: 38px; font-weight: 300;
+}
+.hero-sub strong { color: var(--text); font-weight: 500; }
+.hero-stats { display: flex; gap: 30px; }
+.stat { border-left: 2px solid var(--amber); padding-left: 14px; }
+.stat-val { font-size: 1.55rem; font-weight: 800; }
+.stat-lbl {
+font-family: 'DM Mono', monospace; font-size: 0.62rem;
+text-transform: uppercase; letter-spacing: 0.12em;
+color: var(--muted); margin-top: 3px;
+}
+
+/* ── GEM ── */
+.hero-visual {
+display: flex; justify-content: center; align-items: center; position: relative;
+}
+#gem-canvas {
+width: 340px; height: 340px;
+filter: drop-shadow(0 0 55px rgba(200,133,58,.35)) drop-shadow(0 0 18px rgba(31,207,176,.18));
+animation: gemF 6s ease-in-out infinite;
+}
+@keyframes gemF {
+0%,100% { transform: translateY(0) rotate(0deg); }
+33% { transform: translateY(-14px) rotate(1.4deg); }
+66% { transform: translateY(7px) rotate(-0.9deg); }
+}
+.gem-tag {
+position: absolute; font-family: 'DM Mono', monospace;
+font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase;
+color: var(--muted);
+}
+.gem-tag.tl { top: 28px; right: 0; }
+.gem-tag.bl { bottom: 28px; left: 0; }
+
+/* ── DIVIDER ── */
+.divider { max-width: 1320px; margin: 0 auto; border: none; border-top: 1px solid var(--border); }
+
+/* ── TRENDS SECTION ── */
+.trends-section { max-width: 1320px; margin: 0 auto; padding: 65px 52px 100px; }
+.sec-header {
+display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 44px;
+}
+.sec-header h2 { font-size: 2.1rem; font-weight: 800; letter-spacing: -0.02em; }
+.refresh-info {
+font-family: 'DM Mono', monospace; font-size: 0.68rem;
+color: var(--muted); text-align: right; letter-spacing: 0.08em; text-transform: uppercase;
+}
+#last-update { color: var(--teal); display: block; margin-top: 4px; }
+
+/* ── COUNTRY TABS ── */
+.cat-bar { display: flex; gap: 8px; margin-bottom: 34px; flex-wrap: wrap; }
+.cat-btn {
+font-family: 'DM Mono', monospace; font-size: 0.67rem; letter-spacing: 0.1em;
+text-transform: uppercase; border: 1px solid var(--border);
+background: transparent; color: var(--muted);
+padding: 7px 16px; border-radius: 20px; cursor: pointer; transition: all .22s;
+}
+.cat-btn:hover, .cat-btn.active {
+border-color: var(--amber); color: var(--amber); background: rgba(200,133,58,.08);
+}
+
+/* ── GRID ── */
+.trends-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 15px; }
+
+/* ── CARD ── */
+.trend-card {
+background: var(--surface); border: 1px solid var(--border);
+border-radius: 14px; padding: 22px 24px;
+position: relative; overflow: hidden;
+transition: transform .28s, border-color .28s, background .28s;
+animation: cardIn .45s ease both;
+cursor: pointer;
+}
+.trend-card:hover {
+transform: translateY(-5px);
+border-color: rgba(200,133,58,.35);
+background: rgba(255,255,255,.055);
+}
+.trend-card::before {
+content:''; position: absolute; inset: 0;
+background: linear-gradient(135deg, rgba(200,133,58,.07) 0%, transparent 55%);
+pointer-events: none; opacity: 0; transition: opacity .28s;
+}
+.trend-card:hover::before { opacity: 1; }
+@keyframes cardIn {
+from { opacity: 0; transform: translateY(18px); }
+to { opacity: 1; transform: none; }
+}
+.trend-card.featured { grid-column: span 2; border-color: rgba(200,133,58,.18); }
+.trend-card.featured .trend-title { font-size: 1.38rem; }
+
+.card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 13px; }
+.rank-badge {
+font-family: 'DM Mono', monospace; font-size: 0.63rem; font-weight: 500;
+letter-spacing: 0.1em; color: var(--amber);
+background: var(--rank); border: 1px solid rgba(200,133,58,.22);
+padding: 3px 10px; border-radius: 20px;
+}
+.trend-time { font-family: 'DM Mono', monospace; font-size: 0.6rem; color: var(--muted); }
+.trend-title { font-size: 1.02rem; font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; margin-bottom: 9px; }
+.trend-snippet {
+font-family: 'DM Mono', monospace; font-size: 0.73rem; line-height: 1.6;
+color: var(--muted); font-weight: 300; margin-bottom: 17px;
+display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.trend-card.featured .trend-snippet { -webkit-line-clamp: 3; }
+.card-footer { display: flex; align-items: center; justify-content: space-between; }
+.traffic-pill {
+font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.08em;
+text-transform: uppercase; color: var(--teal); display: flex; align-items: center; gap: 6px;
+}
+.tdot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 6px var(--teal); }
+.view-link {
+font-family: 'DM Mono', monospace; font-size: 0.63rem; letter-spacing: 0.08em;
+text-transform: uppercase; color: var(--muted); text-decoration: none;
+transition: color .2s; display: flex; align-items: center; gap: 5px;
+}
+.view-link:hover { color: var(--amber); }
+.view-link svg { width: 10px; height: 10px; }
+
+/* ── SKELETON ── */
+.sk-card {
+background: var(--surface); border: 1px solid var(--border);
+border-radius: 14px; padding: 22px 24px;
+}
+.sk-card.featured { grid-column: span 2; }
+.sk-line {
+border-radius: 6px; margin-bottom: 10px;
+background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.09) 50%, rgba(255,255,255,.04) 75%);
+background-size: 200% 100%;
+animation: shim 1.5s infinite;
+}
+@keyframes shim { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+.sk-line.h8 { height: 8px; }
+.sk-line.h14 { height: 14px; }
+.sk-line.h18 { height: 18px; }
+.sk-line.w40 { width: 40%; }
+.sk-line.w55 { width: 55%; }
+.sk-line.w75 { width: 75%; }
+.sk-line.w90 { width: 90%; }
+
+/* ── ERROR STATE ── */
+.err-state {
+grid-column: 1 / -1; text-align: center; padding: 70px 20px;
+font-family: 'DM Mono', monospace; color: var(--muted);
+}
+.err-state .err-icon { font-size: 2.2rem; margin-bottom: 18px; }
+.err-state p { font-size: 0.8rem; line-height: 1.7; max-width: 440px; margin: 0 auto 16px; }
+.err-state a { color: var(--amber); text-decoration: none; }
+
+/* ── FOOTER ── */
+footer {
+border-top: 1px solid var(--border); padding: 28px 52px;
+display: flex; justify-content: space-between; align-items: center;
+font-family: 'DM Mono', monospace; font-size: 0.65rem;
+color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase;
+}
+footer a { color: var(--muted); text-decoration: none; }
+footer a:hover { color: var(--amber); }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: rgba(200,133,58,.3); border-radius: 3px; }
+
+@media (max-width: 860px) {
+nav, .hero, .trends-section, footer { padding-left: 18px; padding-right: 18px; }
+.hero { grid-template-columns: 1fr; padding-top: 48px; }
+.hero-visual { display: none; }
+.trends-grid { grid-template-columns: 1fr; }
+.trend-card.featured, .sk-card.featured { grid-column: span 1; }
+.sec-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="hex-canvas"></canvas>
+<div class="glow-blob amber"></div>
+<div class="glow-blob teal"></div>
+
+<div class="page">
+
+<!-- NAV -->
+<nav>
+<div class="logo">
+<canvas id="logo-gem" width="68" height="68"></canvas>
+PLON <span class="accent">BIT</span>
+</div>
+<div class="nav-right">
+<button class="retry-btn" id="retry-btn" onclick="fetchTrends()">↺ Retry</button>
+<div class="nav-badge"><div class="pulse-dot"></div>Live Feed</div>
+</div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+<div class="hero-text">
+<div class="hero-eyebrow">Real-time intelligence</div>
+<h1>Boost your Social Media<br>& Trading experience<br>by <em>"Knowing"</em> what's<br>trending now.</h1>
+<p class="hero-sub">
+Live signals from the world's largest search engine —
+<strong>free, unlimited, and updated every 5 minutes.</strong>
+Stay ahead of viral moments, market sentiment shifts, and cultural inflection points.
+</p>
+<div class="hero-stats">
+<div class="stat">
+<div class="stat-val" id="stat-count">—</div>
+<div class="stat-lbl">Live Trends</div>
+</div>
+<div class="stat">
+<div class="stat-val">5m</div>
+<div class="stat-lbl">Refresh Rate</div>
+</div>
+<div class="stat">
+<div class="stat-val">Free</div>
+<div class="stat-lbl">Always</div>
+</div>
+</div>
+</div>
+<div class="hero-visual">
+<div class="gem-tag tl">OPEN SOURCE</div>
+<canvas id="gem-canvas" width="680" height="680"></canvas>
+<div class="gem-tag bl">LIVE DATA</div>
+</div>
+</section>
+
+<hr class="divider">
+
+<!-- TRENDS -->
+<section class="trends-section">
+<div class="sec-header">
+<h2>Trending Now</h2>
+<div class="refresh-info">
+Auto-refresh every 5 min
+<span id="last-update">Fetching...</span>
+</div>
+</div>
+
+<div class="cat-bar" id="cat-bar">
+<button class="cat-btn active" data-geo="US">🇺🇸 United States</button>
+<button class="cat-btn" data-geo="GB">🇬🇧 United Kingdom</button>
+<button class="cat-btn" data-geo="CA">🇨🇦 Canada</button>
+<button class="cat-btn" data-geo="AU">🇦🇺 Australia</button>
+<button class="cat-btn" data-geo="FR">🇫🇷 France</button>
+<button class="cat-btn" data-geo="DE">🇩🇪 Germany</button>
+<button class="cat-btn" data-geo="IN">🇮🇳 India</button>
+<button class="cat-btn" data-geo="BR">🇧🇷 Brazil</button>
+</div>
+
+<div class="trends-grid" id="trends-grid"></div>
+</section>
+
+<footer>
+<span>Plon Bit © 2025 — Powered by Google Trends</span>
+<span>Data: <a href="https://trends.google.com" target="_blank">trends.google.com</a> · Free · No API Key</span>
+</footer>
+</div>
+
+<script>
+// ══ HEX BACKGROUND ══════════════════════════════════════════════
+(function(){
+const cv = document.getElementById('hex-canvas');
+const cx = cv.getContext('2d');
+let W, H, hexes = [];
+function resize(){
+W = cv.width = window.innerWidth;
+H = cv.height = window.innerHeight;
+hexes = [];
+const r=38, w=r*2, h=Math.sqrt(3)*r;
+const cols = Math.ceil(W/(w*.75))+2, rows = Math.ceil(H/h)+2;
+for(let row=-1;row<rows;row++)
+for(let col=-1;col<cols;col++)
+hexes.push({cx:col*w*.75, cy:row*h+(col%2?h/2:0), r, a:Math.random()*.12, p:Math.random()*Math.PI*2});
+}
+function hexPath(cx2,cy2,r2){
+cx.beginPath();
+for(let i=0;i<6;i++){
+const a=Math.PI/180*(60*i-30);
+i===0?cx.moveTo(cx2+r2*Math.cos(a),cy2+r2*Math.sin(a)):cx.lineTo(cx2+r2*Math.cos(a),cy2+r2*Math.sin(a));
+}
+cx.closePath();
+}
+let t=0;
+function draw(){
+cx.clearRect(0,0,W,H); t+=.007;
+hexes.forEach(h=>{
+const alpha=h.a*(.5+.5*Math.sin(t+h.p));
+hexPath(h.cx,h.cy,h.r-2);
+cx.strokeStyle=`rgba(200,133,58,${alpha})`; cx.lineWidth=.8; cx.stroke();
+});
+requestAnimationFrame(draw);
+}
+window.addEventListener('resize',resize); resize(); draw();
+})();
+
+// ══ 3D GEM ══════════════════════════════════════════════════════
+(function(){
+const cv=document.getElementById('gem-canvas'), ctx=cv.getContext('2d');
+const W=cv.width, H=cv.height, CX=W/2, CY=H/2, R=185;
+function proj(x,y,z,rx,ry){
+let x1=x*Math.cos(ry)-z*Math.sin(ry), z1=x*Math.sin(ry)+z*Math.cos(ry);
+let y2=y*Math.cos(rx)-z1*Math.sin(rx), z2=y*Math.sin(rx)+z1*Math.cos(rx);
+const s=650/(650+z2);
+return [CX+x1*s, CY+y2*s, z2];
+}
+const N=8;
+const verts=[[0,-R*.5,0],[0,R*.28,0]];
+for(let i=0;i<N;i++){
+const a=(i/N)*Math.PI*2;
+verts.push([Math.cos(a)*R*.85, -R*.05, Math.sin(a)*R*.85]);
+verts.push([Math.cos(a+Math.PI/N)*R*.65, R*.19, Math.sin(a+Math.PI/N)*R*.65]);
+}
+const faces=[];
+for(let i=0;i<N;i++){
+const a=2+i*2, b=2+((i*2+2)%(N*2)), c=2+i*2+1, d=2+((i*2+3)%(N*2));
+faces.push([0,a,b],[1,c,d],[a,c,b],[b,c,d]);
+}
+const pal=[
+['rgba(200,133,58,','rgba(240,180,80,'],
+['rgba(31,207,176,','rgba(60,220,200,'],
+['rgba(80,100,180,','rgba(110,130,220,'],
+['rgba(220,220,240,','rgba(255,255,255,'],
+];
+let t=0;
+function draw(){
+ctx.clearRect(0,0,W,H);
+const rx=.26+Math.sin(t*.38)*.1, ry=t;
+const p=verts.map(([x,y,z])=>proj(x,y,z,rx,ry));
+const sorted=faces.map((f,i)=>({f,i,z:f.reduce((s,v)=>s+p[v][2],0)/f.length})).sort((a,b)=>b.z-a.z);
+sorted.forEach(({f,i})=>{
+const pts=f.map(v=>p[v]);
+const [a,b,c]=pts;
+const nz=(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+if(nz<0)return;
+const light=Math.min(1,Math.max(.15,nz/(W*.14)));
+const col=pal[i%pal.length];
+ctx.beginPath();
+pts.forEach(([x,y],k)=>k===0?ctx.moveTo(x,y):ctx.lineTo(x,y));
+ctx.closePath();
+ctx.fillStyle=col[0]+(light*.88)+')'; ctx.fill();
+ctx.strokeStyle=col[1]+'0.55)'; ctx.lineWidth=.7; ctx.stroke();
+});
+t+=.006;
+requestAnimationFrame(draw);
+}
+draw();
+
+// mini logo gem
+const lc=document.getElementById('logo-gem'), lx=lc.getContext('2d');
+lx.beginPath(); lx.moveTo(34,10); lx.lineTo(58,38); lx.lineTo(10,38); lx.closePath();
+lx.fillStyle='rgba(200,133,58,0.92)'; lx.fill();
+lx.strokeStyle='rgba(240,200,100,0.7)'; lx.lineWidth=1; lx.stroke();
+lx.beginPath(); lx.moveTo(34,58); lx.lineTo(58,38); lx.lineTo(10,38); lx.closePath();
+lx.fillStyle='rgba(31,207,176,0.72)'; lx.fill();
+lx.strokeStyle='rgba(80,240,220,0.5)'; lx.lineWidth=1; lx.stroke();
+})();
+
+// ══ TRENDS FETCHER ══════════════════════════════════════════════
+let currentGeo='US', refreshTimer=null;
+
+document.getElementById('cat-bar').addEventListener('click', e=>{
+const btn=e.target.closest('.cat-btn');
+if(!btn) return;
+document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+currentGeo=btn.dataset.geo;
+fetchTrends();
+});
+
+function skeletons(){
+return Array(10).fill(0).map((_,i)=>`
+<div class="sk-card${i===0?' featured':''}">
+<div style="display:flex;justify-content:space-between;margin-bottom:14px">
+<div class="sk-line h8 w40"></div><div class="sk-line h8 w55" style="opacity:.5"></div>
+</div>
+<div class="sk-line h18 w90" style="margin-bottom:12px"></div>
+<div class="sk-line h8 w75"></div>
+<div class="sk-line h8 w55" style="margin-top:8px"></div>
+</div>`).join('');
+}
+
+function relTime(str){
+if(!str) return '';
+try{
+const d=new Date(str), diff=(Date.now()-d)/60000;
+if(diff<2) return 'just now';
+if(diff<60) return `${Math.round(diff)}m ago`;
+if(diff<1440) return `${Math.round(diff/60)}h ago`;
+return `${Math.round(diff/1440)}d ago`;
+}catch{return '';}
+}
+
+function clean(str){
+if(!str) return '';
+return str.replace(/<!\[CDATA\[|\]\]>/g,'').replace(/<[^>]*>/g,'')
+.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").trim();
+}
+
+function fmtTraffic(raw){
+if(!raw) return 'Trending';
+const n=parseInt(raw.replace(/,/g,''), 10);
+if(isNaN(n)) return raw;
+if(n>=1e6) return (n/1e6).toFixed(1)+'M+ searches';
+if(n>=1e3) return Math.round(n/1e3)+'K+ searches';
+return n+'+ searches';
+}
+
+async function fetchTrends(){
+const grid=document.getElementById('trends-grid');
+const retryBtn=document.getElementById('retry-btn');
+grid.innerHTML=skeletons();
+retryBtn.classList.remove('visible');
+document.getElementById('last-update').textContent='Fetching...';
+
+const rssUrl=`https://trends.google.com/trends/trendingsearches/daily/rss?geo=${currentGeo}`;
+// allOrigins: free, no key, no rate limits for personal use, works from file://
+const proxyUrl=`https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
+
+try{
+const res=await fetch(proxyUrl);
+if(!res.ok) throw new Error(`Proxy HTTP ${res.status}`);
+const json=await res.json();
+if(!json.contents) throw new Error('Empty proxy response');
+
+const parser=new DOMParser();
+const doc=parser.parseFromString(json.contents,'text/xml');
+const items=Array.from(doc.querySelectorAll('item'));
+if(!items.length) throw new Error('No items in RSS');
+
+document.getElementById('stat-count').textContent=items.length;
+
+grid.innerHTML=items.map((item,i)=>{
+const title = clean(item.querySelector('title')?.textContent||'');
+const link = clean(item.querySelector('link')?.textContent||'#');
+const pubDate = relTime(item.querySelector('pubDate')?.textContent||'');
+const desc = clean(item.querySelector('description')?.textContent||'');
+
+// ht:approx_traffic is a custom Google Trends RSS element
+const trafficEl = item.getElementsByTagNameNS('*','approx_traffic')[0]
+|| item.querySelector('approx_traffic')
+|| [...item.children].find(c=>c.localName==='approx_traffic');
+const traffic = fmtTraffic(clean(trafficEl?.textContent||''));
+
+return `
+<div class="trend-card${i===0?' featured':''}" style="animation-delay:${i*.038}s">
+<div class="card-top">
+<span class="rank-badge">#${String(i+1).padStart(2,'0')}</span>
+<span class="trend-time">${pubDate}</span>
+</div>
+<div class="trend-title">${title}</div>
+${desc?`<div class="trend-snippet">${desc}</div>`:''}
+<div class="card-footer">
+<span class="traffic-pill"><span class="tdot"></span>${traffic}</span>
+<a class="view-link" href="${link}" target="_blank" rel="noopener">
+View
+<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5">
+<path d="M2 8L8 2M4 2h4v4"/>
+</svg>
+</a>
+</div>
+</div>`;
+}).join('');
+
+document.getElementById('last-update').textContent=
+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+
+} catch(err){
+console.error('[Plon Bit] Fetch failed:', err.message);
+retryBtn.classList.add('visible');
+grid.innerHTML=`
+<div class="err-state">
+<div class="err-icon">⚠</div>
+<p>Couldn't load trends right now.<br>
+The proxy may be temporarily down.<br>
+<strong style="color:var(--text)">${err.message}</strong></p>
+<p>
+<a href="https://trends.google.com/trending?geo=${currentGeo}" target="_blank">
+→ Open Google Trends directly
+</a>
+</p>
+</div>`;
+document.getElementById('last-update').textContent='Failed';
+}
+
+clearInterval(refreshTimer);
+refreshTimer=setInterval(fetchTrends, 300_000);
+}
+
+fetchTrends();
+</script>
+</body>
+</html>
