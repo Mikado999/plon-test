@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plon Bit — Know What's Trending Now</title>
+<meta name="description" content="Boost your Social Media and Trading experience by Knowing what's trending now. Free, live, unlimited.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><polygon points='16,2 30,26 2,26' fill='%23c8853a'/><polygon points='16,30 30,26 2,26' fill='%231fcfb0'/></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080a0f;--surface:rgba(255,255,255,.035);--border:rgba(255,255,255,.07);
+  --amber:#c8853a;--amber2:#e09a4a;--teal:#1fcfb0;--green:#4caf7d;
+  --text:#e8e8ec;--muted:rgba(232,232,236,.44);
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;overflow-x:hidden}
+#hex-canvas{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.4}
+.blob{position:fixed;border-radius:50%;filter:blur(140px);pointer-events:none;z-index:0}
+.blob.a{width:700px;height:700px;background:radial-gradient(circle,rgba(200,133,58,.14) 0%,transparent 70%);top:-150px;right:-130px;animation:bf 9s ease-in-out infinite alternate}
+.blob.b{width:500px;height:500px;background:radial-gradient(circle,rgba(31,207,176,.08) 0%,transparent 70%);bottom:10%;left:-100px;animation:bf 12s ease-in-out infinite alternate-reverse}
+.blob.c{width:400px;height:400px;background:radial-gradient(circle,rgba(155,127,232,.07) 0%,transparent 70%);top:50%;right:10%;animation:bf 10s ease-in-out 2s infinite alternate}
+@keyframes bf{from{transform:translateY(0) scale(1)}to{transform:translateY(50px) scale(1.1)}}
+.page{position:relative;z-index:1}
+
+/* NAV */
+nav{display:flex;align-items:center;justify-content:space-between;padding:20px 60px;border-bottom:1px solid var(--border);backdrop-filter:blur(18px);background:rgba(8,10,15,.65);position:sticky;top:0;z-index:200}
+.logo{display:flex;align-items:center;gap:10px;font-size:1.05rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;color:var(--text)}
+.logo canvas{width:30px;height:30px}
+.logo .ac{color:var(--amber)}
+.nav-cta{background:linear-gradient(135deg,var(--amber),var(--amber2));color:#000;font-family:'DM Mono',monospace;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;font-weight:500;padding:9px 22px;border-radius:24px;text-decoration:none;transition:opacity .2s,transform .2s;display:inline-block}
+.nav-cta:hover{opacity:.88;transform:translateY(-1px)}
+
+/* HERO */
+.hero{padding:120px 60px 90px;text-align:center;max-width:1000px;margin:0 auto}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);border:1px solid rgba(200,133,58,.3);border-radius:20px;padding:6px 16px;margin-bottom:36px}
+.pdot{width:6px;height:6px;border-radius:50%;background:var(--teal);box-shadow:0 0 7px var(--teal);animation:pd 1.4s ease-in-out infinite}
+@keyframes pd{0%,100%{opacity:1}50%{opacity:.3}}
+.hero h1{font-size:clamp(2.8rem,6vw,5rem);font-weight:800;line-height:1.04;letter-spacing:-.03em;margin-bottom:28px}
+.hero h1 em{font-style:normal;background:linear-gradient(135deg,var(--amber2),#f5d080,var(--amber));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-family:'DM Mono',monospace;font-size:.95rem;line-height:1.8;color:var(--muted);max-width:620px;margin:0 auto 48px;font-weight:300}
+.hero-sub strong{color:var(--text);font-weight:500}
+.cta-group{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap}
+.cta-primary{background:linear-gradient(135deg,var(--amber),var(--amber2));color:#000;font-family:'DM Mono',monospace;font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding:14px 34px;border-radius:30px;text-decoration:none;transition:opacity .2s,transform .2s,box-shadow .2s;display:inline-block;box-shadow:0 0 40px rgba(200,133,58,.3)}
+.cta-primary:hover{opacity:.9;transform:translateY(-2px);box-shadow:0 0 60px rgba(200,133,58,.45)}
+.cta-secondary{font-family:'DM Mono',monospace;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:14px 24px;border:1px solid var(--border);border-radius:30px;transition:all .2s}
+.cta-secondary:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
+
+/* HERO STATS */
+.hero-stats{display:flex;justify-content:center;gap:60px;margin-top:72px;flex-wrap:wrap}
+.hstat{text-align:center}
+.hstat-v{font-size:2.4rem;font-weight:800;background:linear-gradient(135deg,var(--amber2),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hstat-l{font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+
+/* FEATURE CARDS */
+.features{padding:100px 60px;max-width:1200px;margin:0 auto}
+.section-tag{font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--amber);margin-bottom:14px}
+.features h2{font-size:clamp(2rem,3.5vw,3rem);font-weight:800;letter-spacing:-.025em;margin-bottom:16px}
+.features-lead{font-family:'DM Mono',monospace;font-size:.85rem;line-height:1.75;color:var(--muted);max-width:560px;margin-bottom:60px;font-weight:300}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.feat-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 26px;position:relative;overflow:hidden;transition:transform .28s,border-color .28s}
+.feat-card:hover{transform:translateY(-4px);border-color:rgba(200,133,58,.3)}
+.feat-card.wide{grid-column:span 2}
+.feat-icon{font-size:1.8rem;margin-bottom:16px}
+.feat-card h3{font-size:1.05rem;font-weight:700;letter-spacing:-.01em;margin-bottom:10px}
+.feat-card p{font-family:'DM Mono',monospace;font-size:.72rem;line-height:1.7;color:var(--muted);font-weight:300}
+.feat-accent{position:absolute;bottom:0;left:0;height:2px;width:40%;background:linear-gradient(90deg,var(--amber),transparent)}
+
+/* SOURCES */
+.sources{padding:80px 60px;max-width:1200px;margin:0 auto;border-top:1px solid var(--border)}
+.sources h2{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;margin-bottom:40px;text-align:center}
+.src-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.src-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;display:flex;align-items:center;gap:16px;transition:transform .25s,border-color .25s}
+.src-card:hover{transform:translateY(-3px);border-color:rgba(200,133,58,.3)}
+.src-icon{font-size:1.8rem;flex-shrink:0}
+.src-info h4{font-size:.9rem;font-weight:700;margin-bottom:4px}
+.src-info p{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--muted);line-height:1.5;font-weight:300}
+.src-tag{font-family:'DM Mono',monospace;font-size:.52rem;letter-spacing:.08em;text-transform:uppercase;color:var(--green);background:rgba(76,175,125,.12);border:1px solid rgba(76,175,125,.22);padding:2px 7px;border-radius:10px;margin-top:6px;display:inline-block}
+
+/* HOW IT WORKS */
+.how{padding:80px 60px;max-width:1200px;margin:0 auto;border-top:1px solid var(--border)}
+.how h2{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;margin-bottom:40px;text-align:center}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.step{text-align:center;padding:32px 24px}
+.step-num{font-family:'DM Mono',monospace;font-size:2.5rem;font-weight:800;color:var(--amber);opacity:.3;line-height:1;margin-bottom:16px}
+.step h3{font-size:.95rem;font-weight:700;margin-bottom:10px}
+.step p{font-family:'DM Mono',monospace;font-size:.7rem;line-height:1.7;color:var(--muted);font-weight:300}
+
+/* FINAL CTA */
+.final-cta{padding:100px 60px;text-align:center;border-top:1px solid var(--border)}
+.final-cta h2{font-size:clamp(2rem,4vw,3.2rem);font-weight:800;letter-spacing:-.025em;margin-bottom:18px}
+.final-cta h2 em{font-style:normal;background:linear-gradient(135deg,var(--amber2),#f5d080,var(--amber));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.final-cta p{font-family:'DM Mono',monospace;font-size:.85rem;line-height:1.8;color:var(--muted);max-width:480px;margin:0 auto 40px;font-weight:300}
+
+footer{border-top:1px solid var(--border);padding:24px 60px;display:flex;justify-content:space-between;align-items:center;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;flex-wrap:wrap;gap:10px}
+footer a{color:var(--muted);text-decoration:none}
+footer a:hover{color:var(--amber)}
+
+@media(max-width:860px){
+  nav,footer{padding-left:20px;padding-right:20px}
+  .hero,.features,.sources,.how,.final-cta{padding-left:20px;padding-right:20px}
+  .hero{padding-top:70px;padding-bottom:60px}
+  .feat-grid{grid-template-columns:1fr}
+  .feat-card.wide{grid-column:span 1}
+  .steps{grid-template-columns:1fr}
+  .hero-stats{gap:36px}
+}
+</style>
+</head>
+<body>
+<canvas id="hex-canvas"></canvas>
+<div class="blob a"></div>
+<div class="blob b"></div>
+<div class="blob c"></div>
+
+<div class="page">
+
+<nav>
+  <a class="logo" href="plonbit.html">
+    <canvas id="logo-gem" width="68" height="68"></canvas>
+    PLON <span class="ac">BIT</span>
+  </a>
+  <a class="nav-cta" href="plonbit.html">Open Dashboard →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge"><div class="pdot"></div>Live · Free · Unlimited</div>
+  <h1>Know What the World<br>is <em>Talking About</em><br>Right Now.</h1>
+  <p class="hero-sub">
+    Plon Bit surfaces live trending topics from Google Trends, Reddit, YouTube and Hacker News —
+    <strong>all in one beautiful dashboard.</strong>
+    Use it to dominate social media, spot market signals, and never miss a moment.
+  </p>
+  <div class="cta-group">
+    <a class="cta-primary" href="plonbit.html">Start Exploring Free →</a>
+    <a class="cta-secondary" href="#features">See Features</a>
+  </div>
+  <div class="hero-stats">
+    <div class="hstat"><div class="hstat-v">4+</div><div class="hstat-l">Live Sources</div></div>
+    <div class="hstat"><div class="hstat-v">5m</div><div class="hstat-l">Refresh Rate</div></div>
+    <div class="hstat"><div class="hstat-v">8</div><div class="hstat-l">Countries</div></div>
+    <div class="hstat"><div class="hstat-v">$0</div><div class="hstat-l">Forever Free</div></div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="section-tag">What's inside</div>
+  <h2>Everything you need to<br>stay ahead of the curve.</h2>
+  <p class="features-lead">Built for creators, traders, marketers, and anyone who needs to know what the world is talking about before everyone else does.</p>
+
+  <div class="feat-grid">
+    <div class="feat-card wide">
+      <div class="feat-icon">📈</div>
+      <h3>Trading Signals</h3>
+      <p>Plon Bit automatically analyzes every trending topic for market sentiment — bullish, bearish, or neutral. Get a real-time "Market Temperature" reading and a ranked list of the top signals affecting markets right now. No Bloomberg terminal required.</p>
+      <div class="feat-accent"></div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">☆</div>
+      <h3>Watchlist</h3>
+      <p>Bookmark any trend with one click. Your watchlist persists across sessions — never lose track of a topic you're monitoring.</p>
+      <div class="feat-accent"></div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🌍</div>
+      <h3>Multi-Country</h3>
+      <p>Switch between 8 countries instantly — US, UK, Canada, Australia, France, Germany, India, and Brazil — all with country-aware Reddit feeds.</p>
+      <div class="feat-accent"></div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">⚡</div>
+      <h3>Market Pulse</h3>
+      <p>See how trends are distributed across Finance, Sports, Entertainment, Tech, Politics, World, and Health — updated with every refresh.</p>
+      <div class="feat-accent"></div>
+    </div>
+    <div class="feat-card wide">
+      <div class="feat-icon">🔎</div>
+      <h3>Live Search & Sort</h3>
+      <p>Filter any keyword across all live trends instantly. Sort by rank, traffic volume, or alphabetically. Click related query tags to drill into a topic. Share any trend to social or copy it to clipboard in one tap.</p>
+      <div class="feat-accent"></div>
+    </div>
+  </div>
+</section>
+
+<!-- SOURCES -->
+<section class="sources" id="sources">
+  <h2>Powered by 4 Live Sources</h2>
+  <div class="src-grid">
+    <div class="src-card">
+      <div class="src-icon">🔍</div>
+      <div class="src-info">
+        <h4>Google Trends</h4>
+        <p>Daily trending searches, approximate traffic volumes, and related queries. Primary source.</p>
+        <span class="src-tag">Primary</span>
+      </div>
+    </div>
+    <div class="src-card">
+      <div class="src-icon">🤖</div>
+      <div class="src-info">
+        <h4>Reddit</h4>
+        <p>Hot posts from r/all and country-specific subreddits. Real-time community pulse.</p>
+        <span class="src-tag">Fallback 1</span>
+      </div>
+    </div>
+    <div class="src-card">
+      <div class="src-icon">▶️</div>
+      <div class="src-info">
+        <h4>YouTube</h4>
+        <p>Most popular videos by country. Discover what people are watching right now.</p>
+        <span class="src-tag">Fallback 2</span>
+      </div>
+    </div>
+    <div class="src-card">
+      <div class="src-icon">🟠</div>
+      <div class="src-info">
+        <h4>Hacker News</h4>
+        <p>Top stories from the tech community. Invaluable for tech traders and founders.</p>
+        <span class="src-tag">Fallback 3</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <h2>How It Works</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <h3>Open the Dashboard</h3>
+      <p>No account. No login. No credit card. Open Plon Bit and live data starts loading immediately from the best available source.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <h3>Read the Signals</h3>
+      <p>Check the Market Temperature gauge and Top Signals board. Filter by country, keyword, or category. Bookmark anything relevant.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <h3>Act Before the Crowd</h3>
+      <p>Post on social while the trend is rising. Adjust your positions before sentiment shifts. Share discoveries with your network.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta">
+  <h2>Ready to <em>Know</em><br>What's Trending?</h2>
+  <p>Free. No account needed. Live data every 5 minutes. Works on any device.</p>
+  <a class="cta-primary" href="plonbit.html">Open Plon Bit Free →</a>
+</section>
+
+<footer>
+  <span>Plon Bit © 2025 — Cobernal Systems</span>
+  <span>
+    <a href="plonbit.html">Dashboard</a> &nbsp;·&nbsp;
+    Sources: Google Trends · Reddit · YouTube · Hacker News
+  </span>
+</footer>
+</div>
+
+<script>
+// Hex bg
+(function(){
+  const cv=document.getElementById('hex-canvas'),cx=cv.getContext('2d');
+  let W,H,hexes=[];
+  function resize(){W=cv.width=window.innerWidth;H=cv.height=window.innerHeight;hexes=[];const r=42,w=r*2,h=Math.sqrt(3)*r,cols=Math.ceil(W/(w*.75))+2,rows=Math.ceil(H/h)+2;for(let row=-1;row<rows;row++)for(let col=-1;col<cols;col++)hexes.push({cx:col*w*.75,cy:row*h+(col%2?h/2:0),r,a:Math.random()*.09,p:Math.random()*Math.PI*2});}
+  function hexP(x,y,r2){cx.beginPath();for(let i=0;i<6;i++){const a=Math.PI/180*(60*i-30);i?cx.lineTo(x+r2*Math.cos(a),y+r2*Math.sin(a)):cx.moveTo(x+r2*Math.cos(a),y+r2*Math.sin(a));}cx.closePath();}
+  let t=0;(function draw(){cx.clearRect(0,0,W,H);t+=.006;hexes.forEach(h=>{const al=h.a*(.5+.5*Math.sin(t+h.p));hexP(h.cx,h.cy,h.r-2);cx.strokeStyle=`rgba(200,133,58,${al})`;cx.lineWidth=.7;cx.stroke();});requestAnimationFrame(draw);})();
+  window.addEventListener('resize',resize);resize();
+})();
+// Logo gem
+(function(){
+  const lc=document.getElementById('logo-gem'),lx=lc.getContext('2d');
+  lx.beginPath();lx.moveTo(34,10);lx.lineTo(58,38);lx.lineTo(10,38);lx.closePath();lx.fillStyle='rgba(200,133,58,0.92)';lx.fill();lx.strokeStyle='rgba(240,200,100,0.7)';lx.lineWidth=1;lx.stroke();
+  lx.beginPath();lx.moveTo(34,58);lx.lineTo(58,38);lx.lineTo(10,38);lx.closePath();lx.fillStyle='rgba(31,207,176,0.72)';lx.fill();lx.strokeStyle='rgba(80,240,220,0.5)';lx.lineWidth=1;lx.stroke();
+})();
+</script>
+</body>
+</html>
